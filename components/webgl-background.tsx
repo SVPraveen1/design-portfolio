@@ -1,13 +1,22 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 
 export default function WebGLBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
+    // Check if we're in the browser environment and component is mounted
+    if (typeof window === 'undefined' || !isMounted) return
+
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -16,6 +25,7 @@ export default function WebGLBackground() {
 
     // Set canvas size
     const resizeCanvas = () => {
+      if (typeof window === 'undefined') return
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
@@ -34,10 +44,14 @@ export default function WebGLBackground() {
       color: string
       life: number
       maxLife: number
+      width: number
+      height: number
 
-      constructor() {
-        this.x = Math.random() * canvas.width
-        this.y = Math.random() * canvas.height
+      constructor(width: number, height: number) {
+        this.width = width
+        this.height = height
+        this.x = Math.random() * this.width
+        this.y = Math.random() * this.height
         this.z = Math.random() * 1000
         this.vx = (Math.random() - 0.5) * 2
         this.vy = (Math.random() - 0.5) * 2
@@ -59,21 +73,21 @@ export default function WebGLBackground() {
           this.z <= 0 ||
           this.life > this.maxLife ||
           this.x < 0 ||
-          this.x > canvas.width ||
+          this.x > this.width ||
           this.y < 0 ||
-          this.y > canvas.height
+          this.y > this.height
         ) {
-          this.x = Math.random() * canvas.width
-          this.y = Math.random() * canvas.height
+          this.x = Math.random() * this.width
+          this.y = Math.random() * this.height
           this.z = 1000
           this.life = 0
         }
       }
 
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         const scale = 1000 / (1000 + this.z)
-        const x2d = this.x * scale + (canvas.width / 2) * (1 - scale)
-        const y2d = this.y * scale + (canvas.height / 2) * (1 - scale)
+        const x2d = this.x * scale + (this.width / 2) * (1 - scale)
+        const y2d = this.y * scale + (this.height / 2) * (1 - scale)
         const size2d = this.size * scale
 
         const alpha = 1 - this.life / this.maxLife
@@ -101,11 +115,11 @@ export default function WebGLBackground() {
       pulseSpeed: number
       pulseOffset: number
 
-      constructor() {
-        this.x1 = Math.random() * canvas.width
-        this.y1 = Math.random() * canvas.height
-        this.x2 = Math.random() * canvas.width
-        this.y2 = Math.random() * canvas.height
+      constructor(width: number, height: number) {
+        this.x1 = Math.random() * width
+        this.y1 = Math.random() * height
+        this.x2 = Math.random() * width
+        this.y2 = Math.random() * height
         this.opacity = 0
         this.pulseSpeed = Math.random() * 0.02 + 0.01
         this.pulseOffset = Math.random() * Math.PI * 2
@@ -115,7 +129,7 @@ export default function WebGLBackground() {
         this.opacity = (Math.sin(time * this.pulseSpeed + this.pulseOffset) + 1) * 0.3
       }
 
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         const gradient = ctx.createLinearGradient(this.x1, this.y1, this.x2, this.y2)
         gradient.addColorStop(0, `rgba(6, 182, 212, ${this.opacity})`)
         gradient.addColorStop(0.5, `rgba(59, 130, 246, ${this.opacity * 0.5})`)
@@ -136,11 +150,11 @@ export default function WebGLBackground() {
     const connections: Connection[] = []
 
     for (let i = 0; i < 150; i++) {
-      particles.push(new Particle())
+      particles.push(new Particle(canvas.width, canvas.height))
     }
 
     for (let i = 0; i < 20; i++) {
-      connections.push(new Connection())
+      connections.push(new Connection(canvas.width, canvas.height))
     }
 
     let time = 0
@@ -153,13 +167,13 @@ export default function WebGLBackground() {
       // Update and draw connections
       connections.forEach((connection) => {
         connection.update(time)
-        connection.draw()
+        connection.draw(ctx)
       })
 
       // Update and draw particles
       particles.forEach((particle) => {
         particle.update()
-        particle.draw()
+        particle.draw(ctx)
       })
 
       // Add floating geometric shapes
@@ -183,12 +197,14 @@ export default function WebGLBackground() {
     animate()
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("resize", resizeCanvas)
+      }
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [])
+  }, [isMounted])
 
   return (
     <motion.canvas

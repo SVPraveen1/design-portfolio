@@ -13,9 +13,18 @@ interface RouteTransitionProps {
 // WebGL Loading Animation Component
 function LoadingWebGL() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
-  const animationRef = React.useRef<number>()
+  const animationRef = React.useRef<number | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   React.useEffect(() => {
+    // Check if we're in the browser environment and component is mounted
+    if (typeof window === 'undefined' || !isMounted) return
+
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -33,10 +42,14 @@ function LoadingWebGL() {
       size: number
       life: number
       maxLife: number
+      width: number
+      height: number
 
-      constructor() {
-        this.x = Math.random() * canvas.width
-        this.y = Math.random() * canvas.height
+      constructor(width: number, height: number) {
+        this.width = width
+        this.height = height
+        this.x = Math.random() * this.width
+        this.y = Math.random() * this.height
         this.vx = (Math.random() - 0.5) * 1
         this.vy = (Math.random() - 0.5) * 1
         this.size = Math.random() * 2 + 1
@@ -49,14 +62,14 @@ function LoadingWebGL() {
         this.y += this.vy
         this.life++
 
-        if (this.life > this.maxLife || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-          this.x = Math.random() * canvas.width
-          this.y = Math.random() * canvas.height
+        if (this.life > this.maxLife || this.x < 0 || this.x > this.width || this.y < 0 || this.y > this.height) {
+          this.x = Math.random() * this.width
+          this.y = Math.random() * this.height
           this.life = 0
         }
       }
 
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         const alpha = 1 - this.life / this.maxLife
         ctx.globalAlpha = alpha * 0.6
         ctx.fillStyle = `rgba(200, 200, 200, 1)`
@@ -68,7 +81,7 @@ function LoadingWebGL() {
 
     const particles: LoadingParticle[] = []
     for (let i = 0; i < 100; i++) {
-      particles.push(new LoadingParticle())
+      particles.push(new LoadingParticle(canvas.width, canvas.height))
     }
 
     let time = 0
@@ -99,7 +112,7 @@ function LoadingWebGL() {
       // Update and draw particles
       particles.forEach((particle) => {
         particle.update()
-        particle.draw()
+        particle.draw(ctx)
       })
 
       // Draw geometric shapes
@@ -127,7 +140,7 @@ function LoadingWebGL() {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [])
+  }, [isMounted])
 
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
 }

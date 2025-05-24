@@ -5,9 +5,24 @@ import { ExternalLink, Github, ArrowRight, Brain, DollarSign, Heart, Zap, Databa
 import Link from "next/link"
 import Footer from "@/components/footer"
 import RouteTransition from "@/components/route-transition"
-import ScrollReveal from "@/components/scroll-reveal"
-import MagneticButton from "@/components/magnetic-button"
-import AdvancedWebGL from "@/components/advanced-webgl"
+import dynamic from 'next/dynamic'
+
+const AdvancedWebGL = dynamic(() => import('@/components/advanced-webgl'), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-black" /> // Optional loading state
+})
+
+const MagneticButton = dynamic(() => import('@/components/magnetic-button'), {
+  ssr: false,
+  // You can add a loading state for MagneticButton as well if needed
+  // loading: () => <button className="px-8 py-3 rounded-full text-lg font-semibold shadow-lg">Loading...</button>
+})
+
+const ScrollReveal = dynamic(() => import('@/components/scroll-reveal'), {
+  ssr: false,
+  // Optional: Add a fallback or loading state for ScrollReveal if its absence affects layout
+  // loading: () => <>{children}</> // Example: render children directly without animation
+})
 
 export default function ProjectsPage() {
   const projects = [

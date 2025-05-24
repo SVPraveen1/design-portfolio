@@ -8,7 +8,13 @@ import Footer from "@/components/footer"
 import RouteTransition from "@/components/route-transition"
 import ScrollReveal from "@/components/scroll-reveal"
 import MagneticButton from "@/components/magnetic-button"
-import AdvancedWebGL from "@/components/advanced-webgl"
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+
+const AdvancedWebGL = dynamic(() => import('@/components/advanced-webgl'), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-black" />
+})
 
 export default function AboutPage() {
   const skills = [
@@ -73,7 +79,9 @@ export default function AboutPage() {
       <div className="min-h-screen bg-black">
         {/* Advanced WebGL Background */}
         <div className="absolute inset-0">
-          <AdvancedWebGL />
+          <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
+            <AdvancedWebGL />
+          </Suspense>
         </div>
 
         {/* Navigation */}

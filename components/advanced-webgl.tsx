@@ -1,14 +1,23 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 
 export default function AdvancedWebGL() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
+    // Check if we're in the browser environment and component is mounted
+    if (typeof window === 'undefined' || !isMounted) return
+
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -19,6 +28,7 @@ export default function AdvancedWebGL() {
     let height = window.innerHeight
 
     const resizeCanvas = () => {
+      if (typeof window === 'undefined') return
       width = window.innerWidth
       height = window.innerHeight
       canvas.width = width
@@ -114,7 +124,7 @@ export default function AdvancedWebGL() {
         }
       }
 
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         const scale = 1000 / (1000 + this.z)
         const x2d = this.x * scale + (width / 2) * (1 - scale)
         const y2d = this.y * scale + (height / 2) * (1 - scale)
@@ -171,7 +181,7 @@ export default function AdvancedWebGL() {
         }
       }
 
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         // Draw connections
         this.connections.forEach((node) => {
           const alpha = (this.activity + node.activity) * 0.3
@@ -243,13 +253,13 @@ export default function AdvancedWebGL() {
       // Update and draw neural network
       nodes.forEach((node) => {
         node.update()
-        node.draw()
+        node.draw(ctx)
       })
 
       // Update and draw particles
       particles.forEach((particle) => {
         particle.update()
-        particle.draw()
+        particle.draw(ctx)
       })
 
       // Add floating geometric shapes with complex animations
@@ -278,13 +288,15 @@ export default function AdvancedWebGL() {
     animate()
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
-      window.removeEventListener("mousemove", handleMouseMove)
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("resize", resizeCanvas)
+        window.removeEventListener("mousemove", handleMouseMove)
+      }
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [])
+  }, [isMounted])
 
   return (
     <motion.canvas

@@ -3,9 +3,25 @@
 import { motion } from "framer-motion"
 import { Github, Linkedin, Mail, Phone, Heart, Code, Zap } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect } from "react"
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
+  const [windowWidth, setWindowWidth] = useState(0)
+
+  useEffect(() => {
+    // Set initial window width on client side
+    if (typeof window !== 'undefined') {
+      setWindowWidth(window.innerWidth)
+      
+      const handleResize = () => {
+        setWindowWidth(window.innerWidth)
+      }
+      
+      window.addEventListener('resize', handleResize)
+      return () => window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   const socialLinks = [
     {
@@ -56,7 +72,7 @@ export default function Footer() {
             key={i}
             className="absolute w-1 h-1 bg-gray-600/30 rounded-full"
             initial={{
-              x: Math.random() * window.innerWidth,
+              x: Math.random() * (windowWidth || 1920),
               y: Math.random() * 200,
             }}
             animate={{
